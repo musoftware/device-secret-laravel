@@ -214,10 +214,12 @@ class DeviceStatusMonitor
 
         $this->logMessage("Device status returned '$status'.");
 
-        // Cache the status
-        $this->writeCache($status);
-
-        if (strtolower($status) !== 'active') {
+        // Only cache if status is active
+        if (strtolower($status) === 'active') {
+            $this->writeCache($status);
+        } else {
+            // Clear any existing cache if status is not active
+            $this->clearCache();
             $this->logMessage('Device status is not active. Terminating process.');
             $this->terminateProcess();
         }
@@ -494,6 +496,16 @@ class DeviceStatusMonitor
         } catch (\Exception $e) {
             // If writing cache fails, log but don't throw - API call was successful
             $this->logMessage('Failed to write cache: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clears the cached device status.
+     */
+    private function clearCache(): void
+    {
+        if ($this->cachePath !== null && file_exists($this->cachePath)) {
+            @unlink($this->cachePath);
         }
     }
 }
