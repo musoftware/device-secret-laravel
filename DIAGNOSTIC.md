@@ -74,6 +74,27 @@ composer show illuminate/support
 composer require musoftware/device-secret-laravel:^1.1 --update-with-dependencies
 ```
 
+### Issue 4: PHP 8.2 with Laravel 9.39.0 or Earlier
+
+**Problem:** Error: `nette/schema v1.2.2 requires php >=7.1 <8.2 -> your php version (8.2.x) does not satisfy that requirement`
+
+**Root Cause:** Laravel 9.39.0's dependency chain (league/commonmark → league/config → nette/schema) includes old versions that don't support PHP 8.2.
+
+**Solution:** This package now includes a conflict rule that prevents installation with incompatible `nette/schema` versions. Composer should automatically resolve to newer compatible versions. Try:
+
+```bash
+composer require musoftware/device-secret-laravel:1.3.3 --update-with-dependencies
+```
+
+If that doesn't work, manually update the dependency chain:
+
+```bash
+composer update league/commonmark league/config nette/schema --with-all-dependencies
+composer require musoftware/device-secret-laravel:1.3.3
+```
+
+**Note:** As of version 1.3.3+, this package conflicts with `nette/schema <1.2.3` to ensure PHP 8.2 compatibility with older Laravel versions.
+
 ## Getting Detailed Error Information
 
 For more details about the conflict, run:
