@@ -23,6 +23,7 @@ class DeviceStatusMonitor
     private bool $started = false;
     private bool $disposed = false;
     private $timer = null;
+    private ?string $cachePath = null;
 
     /**
      * Creates a new DeviceStatusMonitor.
@@ -54,6 +55,7 @@ class DeviceStatusMonitor
         $this->endpoint = $endpoint && trim($endpoint) ? trim($endpoint) : self::DEFAULT_ENDPOINT;
         $this->interval = $interval ?? (24 * 60 * 60); // Default: 1 day in seconds
         $this->logCallback = $log;
+        $this->cachePath = $this->getCacheFilePath();
     }
 
     /**
@@ -152,6 +154,18 @@ class DeviceStatusMonitor
             throw new \RuntimeException('DeviceStatusMonitor has been disposed');
         }
 
+        // Check cache first
+        $cachedStatus = $this->readCache();
+        if ($cachedStatus !== null) {
+            $this->logMessage('Using cached device status.');
+            if (strtolower($cachedStatus) !== 'active') {
+                $this->logMessage('Device status is not active. Terminating process.');
+                $this->terminateProcess();
+            }
+            return;
+        }
+
+        // Cache miss or expired, make API call
         $payload = $this->createRequestPayload();
         $payloadJson = json_encode($payload);
 
@@ -199,6 +213,9 @@ class DeviceStatusMonitor
         $status = (string)$apiResponse['status'];
 
         $this->logMessage("Device status returned '$status'.");
+
+        // Cache the status
+        $this->writeCache($status);
 
         if (strtolower($status) !== 'active') {
             $this->logMessage('Device status is not active. Terminating process.');
@@ -388,6 +405,96 @@ class DeviceStatusMonitor
     public function getEndpoint(): string
     {
         return $this->endpoint;
+    }
+
+    /**
+     * Gets the cache file path for this monitor instance.
+     *
+     * @return string
+     */
+    private function getCacheFilePath(): string
+    {
+        // Create a unique cache key based on program name and device ID
+        $cacheKey = md5($this->programName . '|' . $this->deviceId . '|' . $this->endpoint);
+        $cacheFileName = 'musoftware-device-status-' . $cacheKey . '.json';
+
+        // Try to use Laravel's storage path if available
+        if (function_exists('storage_path')) {
+            $cacheDir = storage_path('app/musoftware');
+        } else {
+            // Fallback to system temp directory
+            $cacheDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'musoftware';
+        }
+
+        // Ensure cache directory exists
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0755, true);
+        }
+
+        return $cacheDir . DIRECTORY_SEPARATOR . $cacheFileName;
+    }
+
+    /**
+     * Reads the cached device status if it exists and is still valid.
+     *
+     * @return string|null The cached status, or null if cache is missing or expired
+     */
+    private function readCache(): ?string
+    {
+        if ($this->cachePath === null || !file_exists($this->cachePath)) {
+            return null;
+        }
+
+        try {
+            $cacheContent = @file_get_contents($this->cachePath);
+            if ($cacheContent === false) {
+                return null;
+            }
+
+            $cacheData = json_decode($cacheContent, true);
+            if ($cacheData === null || !isset($cacheData['status']) || !isset($cacheData['expires_at'])) {
+                return null;
+            }
+
+            // Check if cache is expired
+            $expiresAt = (int)$cacheData['expires_at'];
+            if (time() >= $expiresAt) {
+                // Cache expired, delete it
+                @unlink($this->cachePath);
+                return null;
+            }
+
+            return (string)$cacheData['status'];
+        } catch (\Exception $e) {
+            // If reading cache fails, return null to force API call
+            return null;
+        }
+    }
+
+    /**
+     * Writes the device status to cache.
+     *
+     * @param string $status The device status to cache
+     */
+    private function writeCache(string $status): void
+    {
+        if ($this->cachePath === null) {
+            return;
+        }
+
+        try {
+            $cacheData = [
+                'status' => $status,
+                'cached_at' => time(),
+                'expires_at' => time() + $this->interval
+            ];
+
+            $cacheContent = json_encode($cacheData, JSON_PRETTY_PRINT);
+            @file_put_contents($this->cachePath, $cacheContent, LOCK_EX);
+        } catch (\Exception $e) {
+            // If writing cache fails, log but don't throw - API call was successful
+            $this->logMessage('Failed to write cache: ' . $e->getMessage());
+        }
     }
 }
 
