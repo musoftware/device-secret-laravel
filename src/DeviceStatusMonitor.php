@@ -421,10 +421,18 @@ class DeviceStatusMonitor
         $cacheFileName = 'musoftware-device-status-' . $cacheKey . '.json';
 
         // Try to use Laravel's storage path if available
+        $cacheDir = null;
         if (function_exists('storage_path')) {
-            $cacheDir = storage_path('app/musoftware');
-        } else {
-            // Fallback to system temp directory
+            try {
+                $cacheDir = storage_path('app/musoftware');
+            } catch (\Throwable $e) {
+                // Laravel container not initialized yet, fall back to temp directory
+                $cacheDir = null;
+            }
+        }
+        
+        // Fallback to system temp directory if Laravel storage path is not available
+        if ($cacheDir === null) {
             $cacheDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'musoftware';
         }
 
