@@ -13,7 +13,7 @@ namespace MusoftwareDeviceSecret;
  */
 class DeviceStatusMonitor
 {
-    private const DEFAULT_ENDPOINT = 'https://www.musoftwares.com/api/serial/device';
+    private const DEFAULT_ENDPOINT = 'https://www.mu-hub.com/api/serial/device';
 
     private string $programName;
     private string $deviceId;

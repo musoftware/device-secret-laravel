@@ -30,7 +30,7 @@ return [
     | The API endpoint for device status checks.
     |
     */
-    'endpoint' => env('MUSOFTWARE_ENDPOINT', 'https://www.musoftwares.com/api/serial/device'),
+    'endpoint' => env('MUSOFTWARE_ENDPOINT', 'https://www.mu-hub.com/api/serial/device'),
 
     /*
     |--------------------------------------------------------------------------
