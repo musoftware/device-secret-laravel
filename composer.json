@@ -1,0 +1,52 @@
+{
+    "name": "musoftware/device-secret-laravel",
+    "description": "Laravel package for checking device registration status against the Musoftwares Serial Device API",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "device",
+        "hardware",
+        "registration",
+        "serial",
+        "license",
+        "monitoring",
+        "api"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Musoftware"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "illuminate/support": "^9.0|^10.0|^11.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0|^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MusoftwareDeviceSecret\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MusoftwareDeviceSecret\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MusoftwareDeviceSecret\\MusoftwareDeviceSecretServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "prefer-stable": true
+    }
+}
+
