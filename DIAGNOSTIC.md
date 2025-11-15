@@ -78,22 +78,43 @@ composer require musoftware/device-secret-laravel:^1.1 --update-with-dependencie
 
 **Problem:** Error: `nette/schema v1.2.2 requires php >=7.1 <8.2 -> your php version (8.2.x) does not satisfy that requirement`
 
-**Root Cause:** Laravel 9.39.0's dependency chain (league/commonmark → league/config → nette/schema) includes old versions that don't support PHP 8.2.
+Or: `found musoftware/device-secret-laravel[dev-main, v1.0.0, ..., v1.3.3] but it does not match the constraint` (version 1.3.4 not found)
 
-**Solution:** This package now includes a conflict rule that prevents installation with incompatible `nette/schema` versions. Composer should automatically resolve to newer compatible versions. Try:
+**Root Cause:** 
+- Laravel 9.39.0's dependency chain (league/commonmark → league/config → nette/schema) includes old versions that don't support PHP 8.2.
+- Packagist may not have indexed the new version yet (can take a few minutes after git push).
+
+**Solution:** 
+
+**Option 1: Wait for Packagist to update (Recommended)**
+Wait 1-2 minutes after the version is pushed, then install with dependency updates:
 
 ```bash
-composer require musoftware/device-secret-laravel:1.3.3 --update-with-dependencies
+composer require musoftware/device-secret-laravel:1.3.4 --update-with-dependencies
 ```
 
-If that doesn't work, manually update the dependency chain:
+**Option 2: Install from GitHub directly (Immediate)**
+If Packagist hasn't updated yet, install directly from GitHub:
+
+```bash
+composer require musoftware/device-secret-laravel:dev-main --update-with-dependencies
+```
+
+Then later update to the stable version:
+
+```bash
+composer require musoftware/device-secret-laravel:^1.3.4 --update-with-dependencies
+```
+
+**Option 3: Manual dependency update first**
+Update the dependency chain before installing the package:
 
 ```bash
 composer update league/commonmark league/config nette/schema --with-all-dependencies
-composer require musoftware/device-secret-laravel:1.3.3
+composer require musoftware/device-secret-laravel:1.3.4 --update-with-dependencies
 ```
 
-**Note:** As of version 1.3.3+, this package conflicts with `nette/schema <1.2.3` to ensure PHP 8.2 compatibility with older Laravel versions.
+**Note:** The `--update-with-dependencies` flag is required to allow Composer to resolve compatible versions in the dependency chain.
 
 ## Getting Detailed Error Information
 
